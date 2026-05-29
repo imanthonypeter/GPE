@@ -2,7 +2,7 @@
 
 Criado por António Pedro para gerir os projetos dele na escola, para ficar mais fácil as coisas.
 
-Este repositório contém a infraestrutura de backend e banco de dados para a plataforma.
+Este repositório contém a infraestrutura de backend e banco de dados para a plataforma. **O frontend encontra-se atualmente em desenvolvimento.**
 
 ## Estrutura do Repositório
 
