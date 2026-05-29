@@ -2,15 +2,15 @@ const db = require('../config/db');
 
 exports.getProjectResults = async (req, res) => {
   try {
-    const { id } = req.params; // project_id
+    const { id } = req.params; // id_do_projeto
     
-    // Check access
+    // Verificar acesso
     const memberResult = await db.query('SELECT id FROM project_members WHERE project_id = $1 AND user_id = $2', [id, req.user.id]);
     if (memberResult.rows.length === 0 && req.user.role !== 'teacher') {
-       return res.status(403).json({ error: 'Forbidden' });
+       return res.status(403).json({ error: 'Proibido' });
     }
 
-    // Calculate averages
+    // Calcular médias
     const query = `
       SELECT 
         pm.user_id,
@@ -38,8 +38,8 @@ exports.getProjectResults = async (req, res) => {
       };
     });
 
-    // Save or update final_results in the database
-    // Only teacher or leader should trigger the save ideally, but we'll save it automatically on calculation
+    // Guardar ou atualizar os resultados finais na base de dados
+    // Idealmente, apenas o professor ou líder deveria guardar, mas vamos guardar automaticamente no cálculo
     for (const r of resultsWithEligibility) {
       await db.query(
         `INSERT INTO final_results (project_id, user_id, final_average, eligible_for_defense)
@@ -53,6 +53,6 @@ exports.getProjectResults = async (req, res) => {
     res.json({ results: resultsWithEligibility });
   } catch (error) {
     console.error('Error getting results:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Erro interno do servidor' });
   }
 };

@@ -7,7 +7,7 @@ exports.register = async (req, res) => {
     const { name, email, password, role } = req.body;
     
     if (!['student', 'leader', 'teacher'].includes(role)) {
-      return res.status(400).json({ error: 'Invalid role' });
+      return res.status(400).json({ error: 'Papel inválido' });
     }
 
     const saltRounds = 10;
@@ -21,10 +21,10 @@ exports.register = async (req, res) => {
     res.status(201).json({ user: result.rows[0] });
   } catch (error) {
     console.error('Error in register:', error);
-    if (error.code === '23505') { // unique violation
-      return res.status(400).json({ error: 'Email already exists' });
+    if (error.code === '23505') { // violação de unicidade
+      return res.status(400).json({ error: 'E-mail já existe' });
     }
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Erro interno do servidor' });
   }
 };
 
@@ -36,12 +36,12 @@ exports.login = async (req, res) => {
     const user = result.rows[0];
 
     if (!user) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+      return res.status(401).json({ error: 'E-mail ou senha inválidos' });
     }
 
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+      return res.status(401).json({ error: 'E-mail ou senha inválidos' });
     }
 
     const token = jwt.sign(
@@ -56,6 +56,6 @@ exports.login = async (req, res) => {
     });
   } catch (error) {
     console.error('Error in login:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Erro interno do servidor' });
   }
 };

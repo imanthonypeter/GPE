@@ -10,26 +10,26 @@ const pdfService = require('../services/pdfService');
 
 const { authenticateToken } = require('../middlewares/authMiddleware');
 
-// Auth routes
+// Rotas de Autenticação
 router.post('/auth/register', authController.register);
 router.post('/auth/login', authController.login);
 
-// Project routes
+// Rotas de Projetos
 router.post('/projects', authenticateToken, projectController.createProject);
 router.get('/projects/:id', authenticateToken, projectController.getProjectById);
 router.get('/projects/user/:id', authenticateToken, projectController.getProjectsByUser);
 router.post('/projects/:id/members', authenticateToken, projectController.addMember);
 
-// Phase routes
+// Rotas de Fases
 router.post('/phases', authenticateToken, phaseController.createPhase);
 router.get('/phases/project/:id', authenticateToken, phaseController.getPhasesByProject);
 router.put('/phases/:id/status', authenticateToken, phaseController.updatePhaseStatus);
 
-// Evaluation routes
+// Rotas de Avaliação
 router.post('/evaluations', authenticateToken, evaluationController.addEvaluation);
 router.get('/evaluations/phase/:id', authenticateToken, evaluationController.getEvaluationsByPhase);
 
-// Results & PDF Export routes
+// Rotas de Resultados e Exportação PDF
 router.get('/results/project/:id', authenticateToken, resultController.getProjectResults);
 router.get('/projects/:id/export/pdf', authenticateToken, pdfService.exportProjectPDF);
 

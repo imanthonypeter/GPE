@@ -5,27 +5,27 @@ exports.addEvaluation = async (req, res) => {
     const { phase_id, user_id, participation_score, justification_text } = req.body;
 
     if (participation_score < 0 || participation_score > 100) {
-      return res.status(400).json({ error: 'Score must be between 0 and 100' });
+      return res.status(400).json({ error: 'A pontuação deve estar entre 0 e 100' });
     }
 
-    // Verify phase exists and is open
+    // Verificar se a fase existe e está aberta
     const phaseResult = await db.query('SELECT project_id, status FROM phases WHERE id = $1', [phase_id]);
     const phase = phaseResult.rows[0];
-    if (!phase) return res.status(404).json({ error: 'Phase not found' });
-    if (phase.status !== 'open') return res.status(400).json({ error: 'Phase is closed' });
+    if (!phase) return res.status(404).json({ error: 'Fase não encontrada' });
+    if (phase.status !== 'open') return res.status(400).json({ error: 'Fase está encerrada' });
 
-    // Verify evaluator permissions (must be teacher or leader of the project)
+    // Verificar permissões do avaliador (deve ser professor ou líder do projeto)
     const projectResult = await db.query('SELECT leader_id FROM projects WHERE id = $1', [phase.project_id]);
     const project = projectResult.rows[0];
 
     if (project.leader_id !== req.user.id && req.user.role !== 'teacher') {
-      return res.status(403).json({ error: 'Only leader or teacher can add evaluations' });
+      return res.status(403).json({ error: 'Apenas líderes ou professores podem adicionar avaliações' });
     }
 
-    // Verify the user being evaluated is a member of the project
+    // Verificar se o utilizador avaliado é membro do projeto
     const memberResult = await db.query('SELECT id FROM project_members WHERE project_id = $1 AND user_id = $2', [phase.project_id, user_id]);
     if (memberResult.rows.length === 0) {
-      return res.status(400).json({ error: 'User is not a member of this project' });
+      return res.status(400).json({ error: 'O utilizador não é membro deste projeto' });
     }
 
     const result = await db.query(
@@ -40,7 +40,7 @@ exports.addEvaluation = async (req, res) => {
     res.status(201).json({ evaluation: result.rows[0] });
   } catch (error) {
     console.error('Error adding evaluation:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Erro interno do servidor' });
   }
 };
 
@@ -48,14 +48,14 @@ exports.getEvaluationsByPhase = async (req, res) => {
   try {
     const { id } = req.params;
     
-    // Verify if user is part of the project or a teacher
+    // Verificar se o utilizador faz parte do projeto ou é professor
     const phaseResult = await db.query('SELECT project_id FROM phases WHERE id = $1', [id]);
     const phase = phaseResult.rows[0];
-    if (!phase) return res.status(404).json({ error: 'Phase not found' });
+    if (!phase) return res.status(404).json({ error: 'Fase não encontrada' });
 
     const memberResult = await db.query('SELECT id FROM project_members WHERE project_id = $1 AND user_id = $2', [phase.project_id, req.user.id]);
     if (memberResult.rows.length === 0 && req.user.role !== 'teacher') {
-       return res.status(403).json({ error: 'Forbidden' });
+       return res.status(403).json({ error: 'Proibido' });
     }
 
     const result = await db.query(
@@ -71,6 +71,6 @@ exports.getEvaluationsByPhase = async (req, res) => {
     res.json({ evaluations: result.rows });
   } catch (error) {
     console.error('Error getting evaluations:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Erro interno do servidor' });
   }
 };

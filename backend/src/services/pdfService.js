@@ -5,18 +5,18 @@ exports.exportProjectPDF = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Check access
+    // Verificar acesso
     const memberResult = await db.query('SELECT id FROM project_members WHERE project_id = $1 AND user_id = $2', [id, req.user.id]);
     if (memberResult.rows.length === 0 && req.user.role !== 'teacher') {
-       return res.status(403).json({ error: 'Forbidden' });
+       return res.status(403).json({ error: 'Proibido' });
     }
 
-    // Gather Project Info
+    // Reunir informações do projeto
     const projectResult = await db.query('SELECT * FROM projects WHERE id = $1', [id]);
     const project = projectResult.rows[0];
-    if (!project) return res.status(404).json({ error: 'Project not found' });
+    if (!project) return res.status(404).json({ error: 'Projeto não encontrado' });
 
-    // Gather Members and Final Results
+    // Reunir membros e resultados finais
     const resultsQuery = `
       SELECT u.name, u.email, pm.role_in_project, fr.final_average, fr.eligible_for_defense
       FROM project_members pm
@@ -27,15 +27,15 @@ exports.exportProjectPDF = async (req, res) => {
     `;
     const membersResult = await db.query(resultsQuery, [id]);
 
-    // Create a new PDF document
+    // Criar um novo documento PDF
     const doc = new PDFDocument({ margin: 50 });
 
-    // Stream the PDF to the response
+    // Enviar o PDF na resposta
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="project_${id}_report.pdf"`);
     doc.pipe(res);
 
-    // Document Header
+    // Cabeçalho do documento
     doc.fontSize(20).text('Relatório Final do Projeto', { align: 'center' });
     doc.moveDown();
 
@@ -44,7 +44,7 @@ exports.exportProjectPDF = async (req, res) => {
     doc.fontSize(12).text(`Descrição: ${project.description || 'N/A'}`);
     doc.moveDown();
 
-    // Results section
+    // Secção de resultados
     doc.fontSize(16).text('Resultados Finais e Membros');
     doc.moveDown(0.5);
 
@@ -59,13 +59,13 @@ exports.exportProjectPDF = async (req, res) => {
       doc.moveDown(0.5);
     });
 
-    // Finalize the PDF
+    // Finalizar o PDF
     doc.end();
 
   } catch (error) {
     console.error('Error generating PDF:', error);
     if (!res.headersSent) {
-      res.status(500).json({ error: 'Internal server error while generating PDF' });
+      res.status(500).json({ error: 'Erro interno do servidor ao gerar PDF' });
     }
   }
 };

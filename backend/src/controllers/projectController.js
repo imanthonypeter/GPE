@@ -3,13 +3,13 @@ const db = require('../config/db');
 exports.createProject = async (req, res) => {
   try {
     const { title, description, subject } = req.body;
-    const leader_id = req.user.id; // leader is the one creating it
+    const leader_id = req.user.id; // o líder é quem está a criar
 
     if (req.user.role !== 'leader' && req.user.role !== 'teacher') {
-      return res.status(403).json({ error: 'Only leaders or teachers can create projects' });
+      return res.status(403).json({ error: 'Apenas líderes ou professores podem criar projetos' });
     }
 
-    // Use transaction to create project and add leader to members
+    // Usar transação para criar projeto e adicionar o líder aos membros
     const client = await db.query('BEGIN');
     try {
       const projectResult = await db.query(
@@ -31,7 +31,7 @@ exports.createProject = async (req, res) => {
     }
   } catch (error) {
     console.error('Error creating project:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Erro interno do servidor' });
   }
 };
 
@@ -42,7 +42,7 @@ exports.getProjectById = async (req, res) => {
     const project = projectResult.rows[0];
 
     if (!project) {
-      return res.status(404).json({ error: 'Project not found' });
+      return res.status(404).json({ error: 'Projeto não encontrado' });
     }
 
     const membersResult = await db.query(
@@ -56,7 +56,7 @@ exports.getProjectById = async (req, res) => {
     res.json({ project, members: membersResult.rows });
   } catch (error) {
     console.error('Error getting project:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Erro interno do servidor' });
   }
 };
 
@@ -64,9 +64,9 @@ exports.getProjectsByUser = async (req, res) => {
   try {
     const { id } = req.params;
     
-    // Check if user is requesting their own projects or if it's a teacher
+    // Verificar se o utilizador está a solicitar os seus próprios projetos ou se é um professor
     if (req.user.id !== parseInt(id) && req.user.role !== 'teacher') {
-      return res.status(403).json({ error: 'Forbidden' });
+      return res.status(403).json({ error: 'Proibido' });
     }
 
     const result = await db.query(
@@ -81,7 +81,7 @@ exports.getProjectsByUser = async (req, res) => {
     res.json({ projects: result.rows });
   } catch (error) {
     console.error('Error getting user projects:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Erro interno do servidor' });
   }
 };
 
@@ -94,11 +94,11 @@ exports.addMember = async (req, res) => {
     const project = projectResult.rows[0];
     
     if (!project) {
-      return res.status(404).json({ error: 'Project not found' });
+      return res.status(404).json({ error: 'Projeto não encontrado' });
     }
 
     if (project.leader_id !== req.user.id && req.user.role !== 'teacher') {
-      return res.status(403).json({ error: 'Only the project leader or a teacher can add members' });
+      return res.status(403).json({ error: 'Apenas o líder do projeto ou um professor podem adicionar membros' });
     }
 
     const result = await db.query(
@@ -110,8 +110,8 @@ exports.addMember = async (req, res) => {
   } catch (error) {
     console.error('Error adding member:', error);
     if (error.code === '23505') {
-      return res.status(400).json({ error: 'User is already a member of this project' });
+      return res.status(400).json({ error: 'O utilizador já é membro deste projeto' });
     }
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Erro interno do servidor' });
   }
 };
