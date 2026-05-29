@@ -32,16 +32,16 @@ exports.exportProjectPDF = async (req, res) => {
 
     // Stream the PDF to the response
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', \`attachment; filename="project_\${id}_report.pdf"\`);
+    res.setHeader('Content-Disposition', `attachment; filename="project_${id}_report.pdf"`);
     doc.pipe(res);
 
     // Document Header
     doc.fontSize(20).text('Relatório Final do Projeto', { align: 'center' });
     doc.moveDown();
 
-    doc.fontSize(14).text(\`Projeto: \${project.title}\`);
-    doc.fontSize(12).text(\`Disciplina: \${project.subject || 'N/A'}\`);
-    doc.fontSize(12).text(\`Descrição: \${project.description || 'N/A'}\`);
+    doc.fontSize(14).text(`Projeto: ${project.title}`);
+    doc.fontSize(12).text(`Disciplina: ${project.subject || 'N/A'}`);
+    doc.fontSize(12).text(`Descrição: ${project.description || 'N/A'}`);
     doc.moveDown();
 
     // Results section
@@ -52,10 +52,10 @@ exports.exportProjectPDF = async (req, res) => {
       const avg = m.final_average !== null ? parseFloat(m.final_average).toFixed(2) : 'N/A';
       const status = m.eligible_for_defense === true ? 'APURADO PARA DEFESA' : (m.eligible_for_defense === false ? 'NÃO APURADO' : 'Pendente');
       
-      doc.fontSize(12).text(\`Nome: \${m.name} (\${m.role_in_project})\`);
-      doc.fontSize(10).text(\`Email: \${m.email}\`);
-      doc.fontSize(10).text(\`Média Final: \${avg}%\`);
-      doc.fontSize(10).text(\`Status: \${status}\`);
+      doc.fontSize(12).text(`Nome: ${m.name} (${m.role_in_project})`);
+      doc.fontSize(10).text(`Email: ${m.email}`);
+      doc.fontSize(10).text(`Média Final: ${avg}%`);
+      doc.fontSize(10).text(`Status: ${status}`);
       doc.moveDown(0.5);
     });
 

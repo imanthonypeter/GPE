@@ -42,3 +42,12 @@ backend/.env
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Frontend
+/app/
+/components/
+/lib/
+/public/
+/*.ts
+/*.json
+/*.mjs
