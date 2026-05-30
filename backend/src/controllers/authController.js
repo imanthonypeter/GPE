@@ -36,12 +36,12 @@ exports.login = async (req, res) => {
     const user = result.rows[0];
 
     if (!user) {
-      return res.status(401).json({ error: 'E-mail ou senha inválidos' });
+      return res.status(404).json({ error: 'A conta com este e-mail não existe.' });
     }
 
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) {
-      return res.status(401).json({ error: 'E-mail ou senha inválidos' });
+      return res.status(401).json({ error: 'Senha incorreta.' });
     }
 
     const token = jwt.sign(

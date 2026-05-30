@@ -2,7 +2,7 @@ const db = require('../config/db');
 
 exports.addEvaluation = async (req, res) => {
   try {
-    const { phase_id, user_id, participation_score, justification_text } = req.body;
+    const { phase_id, user_id, participation_score, justification_text, work_done } = req.body;
 
     if (participation_score < 0 || participation_score > 100) {
       return res.status(400).json({ error: 'A pontuação deve estar entre 0 e 100' });
@@ -29,12 +29,12 @@ exports.addEvaluation = async (req, res) => {
     }
 
     const result = await db.query(
-      `INSERT INTO phase_evaluations (phase_id, user_id, participation_score, justification_text, evaluated_by) 
-       VALUES ($1, $2, $3, $4, $5) 
+      `INSERT INTO phase_evaluations (phase_id, user_id, participation_score, justification_text, work_done, evaluated_by) 
+       VALUES ($1, $2, $3, $4, $5, $6) 
        ON CONFLICT (phase_id, user_id) 
-       DO UPDATE SET participation_score = EXCLUDED.participation_score, justification_text = EXCLUDED.justification_text, evaluated_by = EXCLUDED.evaluated_by, created_at = CURRENT_TIMESTAMP
+       DO UPDATE SET participation_score = EXCLUDED.participation_score, justification_text = EXCLUDED.justification_text, work_done = EXCLUDED.work_done, evaluated_by = EXCLUDED.evaluated_by, created_at = CURRENT_TIMESTAMP
        RETURNING *`,
-      [phase_id, user_id, participation_score, justification_text, req.user.id]
+      [phase_id, user_id, participation_score, justification_text, work_done, req.user.id]
     );
 
     res.status(201).json({ evaluation: result.rows[0] });

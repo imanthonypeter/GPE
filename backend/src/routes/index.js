@@ -6,6 +6,7 @@ const projectController = require('../controllers/projectController');
 const phaseController = require('../controllers/phaseController');
 const evaluationController = require('../controllers/evaluationController');
 const resultController = require('../controllers/resultController');
+const userController = require('../controllers/userController');
 const pdfService = require('../services/pdfService');
 
 const { authenticateToken } = require('../middlewares/authMiddleware');
@@ -13,6 +14,10 @@ const { authenticateToken } = require('../middlewares/authMiddleware');
 // Rotas de Autenticação
 router.post('/auth/register', authController.register);
 router.post('/auth/login', authController.login);
+
+// Rotas de Usuário (Perfil)
+router.put('/users/profile', authenticateToken, userController.updateProfile);
+router.post('/users/profile/avatar', authenticateToken, userController.uploadAvatar);
 
 // Rotas de Projetos
 router.post('/projects', authenticateToken, projectController.createProject);

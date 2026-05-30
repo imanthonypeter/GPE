@@ -10,24 +10,27 @@ exports.createProject = async (req, res) => {
     }
 
     // Usar transação para criar projeto e adicionar o líder aos membros
-    const client = await db.query('BEGIN');
+    const client = await db.getClient();
     try {
-      const projectResult = await db.query(
+      await client.query('BEGIN');
+      const projectResult = await client.query(
         'INSERT INTO projects (title, description, subject, leader_id) VALUES ($1, $2, $3, $4) RETURNING *',
         [title, description, subject, leader_id]
       );
       const project = projectResult.rows[0];
 
-      await db.query(
+      await client.query(
         'INSERT INTO project_members (project_id, user_id, role_in_project) VALUES ($1, $2, $3)',
         [project.id, leader_id, 'leader']
       );
 
-      await db.query('COMMIT');
+      await client.query('COMMIT');
       res.status(201).json({ project });
     } catch (e) {
-      await db.query('ROLLBACK');
+      await client.query('ROLLBACK');
       throw e;
+    } finally {
+      client.release();
     }
   } catch (error) {
     console.error('Error creating project:', error);
@@ -88,7 +91,7 @@ exports.getProjectsByUser = async (req, res) => {
 exports.addMember = async (req, res) => {
   try {
     const { id } = req.params;
-    const { user_id, role_in_project } = req.body;
+    const { user_id, email, role_in_project } = req.body;
 
     const projectResult = await db.query('SELECT leader_id FROM projects WHERE id = $1', [id]);
     const project = projectResult.rows[0];
@@ -101,9 +104,24 @@ exports.addMember = async (req, res) => {
       return res.status(403).json({ error: 'Apenas o líder do projeto ou um professor podem adicionar membros' });
     }
 
+    let targetUserId = user_id;
+    
+    // Se enviou o email, procura o user_id correspondente
+    if (email && !targetUserId) {
+      const userRes = await db.query('SELECT id FROM users WHERE email = $1', [email]);
+      if (userRes.rows.length === 0) {
+        return res.status(404).json({ error: 'Utilizador com este email não encontrado.' });
+      }
+      targetUserId = userRes.rows[0].id;
+    }
+
+    if (!targetUserId) {
+      return res.status(400).json({ error: 'É necessário fornecer um user_id ou email.' });
+    }
+
     const result = await db.query(
       'INSERT INTO project_members (project_id, user_id, role_in_project) VALUES ($1, $2, $3) RETURNING *',
-      [id, user_id, role_in_project || 'member']
+      [id, targetUserId, role_in_project || 'member']
     );
 
     res.status(201).json({ member: result.rows[0] });
