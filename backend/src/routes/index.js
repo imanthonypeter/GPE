@@ -23,7 +23,12 @@ router.post('/users/profile/avatar', authenticateToken, userController.uploadAva
 router.post('/projects', authenticateToken, projectController.createProject);
 router.get('/projects/:id', authenticateToken, projectController.getProjectById);
 router.get('/projects/user/:id', authenticateToken, projectController.getProjectsByUser);
+router.put('/projects/:id/finish', authenticateToken, projectController.finishProject);
+
+// CRUD de Membros do Projeto
 router.post('/projects/:id/members', authenticateToken, projectController.addMember);
+router.put('/projects/:id/members/:memberId', authenticateToken, projectController.updateMemberRole);
+router.delete('/projects/:id/members/:memberId', authenticateToken, projectController.removeMember);
 
 // Rotas de Fases
 router.post('/phases', authenticateToken, phaseController.createPhase);

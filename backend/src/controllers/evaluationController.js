@@ -22,19 +22,48 @@ exports.addEvaluation = async (req, res) => {
       return res.status(403).json({ error: 'Apenas líderes ou professores podem adicionar avaliações' });
     }
 
+    let targetUserId = user_id;
+    if (req.body.user_email) {
+      const uRes = await db.query('SELECT id FROM users WHERE email = $1', [req.body.user_email]);
+      if (uRes.rows.length === 0) return res.status(404).json({ error: 'Utilizador com esse email não encontrado' });
+      targetUserId = uRes.rows[0].id;
+    }
+
+    if (!targetUserId) {
+      return res.status(400).json({ error: 'ID ou Email do membro são necessários' });
+    }
+
     // Verificar se o utilizador avaliado é membro do projeto
-    const memberResult = await db.query('SELECT id FROM project_members WHERE project_id = $1 AND user_id = $2', [phase.project_id, user_id]);
+    const memberResult = await db.query('SELECT id FROM project_members WHERE project_id = $1 AND user_id = $2', [phase.project_id, targetUserId]);
     if (memberResult.rows.length === 0) {
       return res.status(400).json({ error: 'O utilizador não é membro deste projeto' });
     }
 
+    // Check if evaluation already exists and handle edit_count
+    const existingEvalResult = await db.query(
+      'SELECT edit_count FROM phase_evaluations WHERE phase_id = $1 AND user_id = $2',
+      [phase_id, targetUserId]
+    );
+
+    let editCount = 0;
+    if (existingEvalResult.rows.length > 0) {
+      editCount = existingEvalResult.rows[0].edit_count;
+      
+      if (req.user.role !== 'teacher') {
+        if (editCount >= 3) {
+          return res.status(403).json({ error: 'Limite de 3 edições atingido para este membro nesta fase' });
+        }
+        editCount += 1;
+      }
+    }
+
     const result = await db.query(
-      `INSERT INTO phase_evaluations (phase_id, user_id, participation_score, justification_text, work_done, evaluated_by) 
-       VALUES ($1, $2, $3, $4, $5, $6) 
+      `INSERT INTO phase_evaluations (phase_id, user_id, participation_score, justification_text, work_done, evaluated_by, edit_count) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7) 
        ON CONFLICT (phase_id, user_id) 
-       DO UPDATE SET participation_score = EXCLUDED.participation_score, justification_text = EXCLUDED.justification_text, work_done = EXCLUDED.work_done, evaluated_by = EXCLUDED.evaluated_by, created_at = CURRENT_TIMESTAMP
+       DO UPDATE SET participation_score = EXCLUDED.participation_score, justification_text = EXCLUDED.justification_text, work_done = EXCLUDED.work_done, evaluated_by = EXCLUDED.evaluated_by, edit_count = EXCLUDED.edit_count, created_at = CURRENT_TIMESTAMP
        RETURNING *`,
-      [phase_id, user_id, participation_score, justification_text, work_done, req.user.id]
+      [phase_id, targetUserId, participation_score, justification_text, work_done, req.user.id, editCount]
     );
 
     res.status(201).json({ evaluation: result.rows[0] });
@@ -49,7 +78,7 @@ exports.getEvaluationsByPhase = async (req, res) => {
     const { id } = req.params;
     
     // Verificar se o utilizador faz parte do projeto ou é professor
-    const phaseResult = await db.query('SELECT project_id FROM phases WHERE id = $1', [id]);
+    const phaseResult = await db.query('SELECT project_id, status FROM phases WHERE id = $1', [id]);
     const phase = phaseResult.rows[0];
     if (!phase) return res.status(404).json({ error: 'Fase não encontrada' });
 
@@ -68,7 +97,21 @@ exports.getEvaluationsByPhase = async (req, res) => {
       [id]
     );
 
-    res.json({ evaluations: result.rows });
+    const membersResult = await db.query(
+      `SELECT u.id as user_id, u.name, u.email, pm.role_in_project
+       FROM project_members pm
+       JOIN users u ON pm.user_id = u.id
+       WHERE pm.project_id = $1
+       ORDER BY u.name ASC`,
+      [phase.project_id]
+    );
+
+    res.json({ 
+      evaluations: result.rows,
+      project_id: phase.project_id,
+      phase_status: phase.status,
+      members: membersResult.rows 
+    });
   } catch (error) {
     console.error('Error getting evaluations:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
